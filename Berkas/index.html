@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Berkas — IPEN Academy</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+
+        <a class="logo" href="/">IPEN<span>.</span></a>
+
+        <nav class="navigation">
+            <a href="/">Beranda</a>
+            <a href="/List-Kelas/">List Kelas</a>
+            <a href="/Artikel/">Artikel</a>
+            <a href="/Berkas/">Berkas</a>
+        </nav>
+
+    </div>
+</header>
+
+<main>
+
+    <section class="hero">
+        <div class="container">
+
+            <p class="eyebrow">03 / Digital Archive</p>
+
+            <h1>Berkas.</h1>
+
+            <p class="hero-description">
+                Buku, jurnal, dokumen, dan berbagai
+                bahan bacaan yang tersedia di arsip.
+            </p>
+
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+
+            <input
+                id="fileSearch"
+                class="search-box"
+                type="search"
+                placeholder="Cari judul buku, jurnal, atau berkas..."
+                aria-label="Cari berkas"
+            >
+
+            <div id="fileFilters" class="filters">
+                <button class="filter-button active" data-category="Semua">
+                    Semua
+                </button>
+
+                <button class="filter-button" data-category="Buku">
+                    Buku
+                </button>
+
+                <button class="filter-button" data-category="Jurnal">
+                    Jurnal
+                </button>
+
+                <button class="filter-button" data-category="Materi">
+                    Materi
+                </button>
+            </div>
+
+            <div id="fileList" class="content-list">
+                <p class="muted">Memuat indeks berkas...</p>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <a class="logo" href="/">IPEN<span>.</span></a>
+        <p>IPEN Academy — Digital Archive</p>
+    </div>
+</footer>
+
+<script>
+const fileList = document.getElementById("fileList");
+const fileSearch = document.getElementById("fileSearch");
+const fileFilters = document.getElementById("fileFilters");
+
+let files = [];
+let selectedCategory = "Semua";
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char];
+    });
+}
+
+function renderFiles() {
+    const query = fileSearch.value.toLowerCase().trim();
+
+    const filtered = files.filter(file => {
+        const matchesQuery =
+            file.title.toLowerCase().includes(query) ||
+            file.category.toLowerCase().includes(query) ||
+            file.filename.toLowerCase().includes(query);
+
+        const matchesCategory =
+            selectedCategory === "Semua" ||
+            file.category === selectedCategory;
+
+        return matchesQuery && matchesCategory;
+    });
+
+    if (filtered.length === 0) {
+        fileList.innerHTML = `
+            <div class="empty-state">
+                <h3>Belum ada berkas yang cocok.</h3>
+                <p>
+                    Berkas yang tersedia akan muncul
+                    secara otomatis setelah indeks diperbarui.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    fileList.innerHTML = filtered.map((file, index) => `
+        <a class="list-item"
+           href="${file.url}"
+           target="_blank"
+           rel="noopener noreferrer">
+
+            <span class="list-number">
+                ${String(index + 1).padStart(2, "0")}
+            </span>
+
+            <div>
+                <h3>${escapeHTML(file.title)}</h3>
+
+                <p>
+                    ${escapeHTML(file.category)}
+                    · ${escapeHTML(file.extension)}
+                </p>
+            </div>
+
+            <span class="list-action">BUKA ↗</span>
+
+        </a>
+    `).join("");
+}
+
+fileSearch.addEventListener("input", renderFiles);
+
+fileFilters.addEventListener("click", event => {
+    const button = event.target.closest("button[data-category]");
+
+    if (!button) return;
+
+    selectedCategory = button.dataset.category;
+
+    fileFilters.querySelectorAll("button").forEach(item => {
+        item.classList.toggle("active", item === button);
+    });
+
+    renderFiles();
+});
+
+fetch("/Berkas/files.json")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Indeks berkas tidak ditemukan.");
+        }
+
+        return response.json();
+    })
+    .then(data => {
+        files = Array.isArray(data) ? data : [];
+        renderFiles();
+    })
+    .catch(() => {
+        fileList.innerHTML = `
+            <div class="empty-state">
+                <h3>Indeks belum tersedia.</h3>
+                <p>
+                    Pastikan GitHub Actions sudah berhasil
+                    membuat indeks berkas.
+                </p>
+            </div>
+        `;
+    });
+</script>
+
+</body>
+</html>
