@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Artikel — IPEN Academy</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+</head>
+
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+
+        <a class="logo" href="/">IPEN<span>.</span></a>
+
+        <nav class="navigation">
+            <a href="/">Beranda</a>
+            <a href="/List-Kelas/">List Kelas</a>
+            <a href="/Artikel/">Artikel</a>
+            <a href="/Berkas/">Berkas</a>
+        </nav>
+
+    </div>
+</header>
+
+<main>
+
+    <section class="hero">
+        <div class="container">
+
+            <p class="eyebrow">02 / Written Knowledge</p>
+
+            <h1>Artikel.</h1>
+
+            <p class="hero-description">
+                Kumpulan tulisan, gagasan, penjelasan,
+                dan analisis dari IPEN Academy.
+            </p>
+
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+
+            <input
+                id="articleSearch"
+                class="search-box"
+                type="search"
+                placeholder="Cari judul artikel..."
+                aria-label="Cari artikel"
+            >
+
+            <div id="articleList" class="content-list">
+                <p class="muted">Memuat indeks artikel...</p>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <a class="logo" href="/">IPEN<span>.</span></a>
+        <p>IPEN Academy — Articles</p>
+    </div>
+</footer>
+
+<script>
+const articleList = document.getElementById("articleList");
+const articleSearch = document.getElementById("articleSearch");
+
+let articles = [];
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char];
+    });
+}
+
+function renderArticles() {
+    const query = articleSearch.value.toLowerCase().trim();
+
+    const filtered = articles.filter(article => {
+        return (
+            article.title.toLowerCase().includes(query) ||
+            (article.description || "").toLowerCase().includes(query) ||
+            (article.category || "").toLowerCase().includes(query)
+        );
+    });
+
+    if (filtered.length === 0) {
+        articleList.innerHTML = `
+            <div class="empty-state">
+                <h3>Belum ada artikel.</h3>
+                <p>Artikel yang tersedia akan muncul di sini.</p>
+            </div>
+        `;
+        return;
+    }
+
+    articleList.innerHTML = filtered.map((article, index) => `
+        <a class="list-item" href="${article.url}">
+            <span class="list-number">
+                ${String(index + 1).padStart(2, "0")}
+            </span>
+
+            <div>
+                <h3>${escapeHTML(article.title)}</h3>
+                <p>
+                    ${escapeHTML(article.category || "Artikel")}
+                    ${article.description
+                        ? " — " + escapeHTML(article.description)
+                        : ""}
+                </p>
+            </div>
+
+            <span class="list-action">BACA →</span>
+        </a>
+    `).join("");
+}
+
+articleSearch.addEventListener("input", renderArticles);
+
+fetch("/Artikel/articles.json")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Indeks artikel tidak ditemukan.");
+        }
+
+        return response.json();
+    })
+    .then(data => {
+        articles = Array.isArray(data) ? data : [];
+        renderArticles();
+    })
+    .catch(() => {
+        articleList.innerHTML = `
+            <div class="empty-state">
+                <h3>Indeks belum tersedia.</h3>
+                <p>
+                    Pastikan GitHub Actions sudah berhasil
+                    membuat indeks artikel.
+                </p>
+            </div>
+        `;
+    });
+</script>
+
+</body>
+</html>
