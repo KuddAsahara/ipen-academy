@@ -2,7 +2,7 @@
 title: "Hari Buruh Bukan Sekadar Libur: Sejarah Perjuangan Hak Pekerja"
 description: "Menelusuri sejarah perjuangan jam kerja yang manusiawi, perkembangan serikat pekerja, gerakan buruh Indonesia, perubahan politik, dan tantangan kerja di era digital."
 category: "Sejarah dan Sosial
-author: "Sri Nusantara Wira"
+author: "IPEN Academy"
 date: "2026-11-04"
 ---
 
