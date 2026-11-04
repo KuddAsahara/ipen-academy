@@ -1,166 +1,180 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Baca Artikel — IPEN Academy</title>
+    <title>Artikel | IPEN Academy</title>
 
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="../style.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+    <style>
+        .article-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .article-card {
+            background: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 18px;
+        }
+
+        .article-card h2 {
+            margin-top: 0;
+        }
+
+        .article-card a {
+            color: #2457a7;
+            text-decoration: none;
+        }
+
+        .article-card a:hover {
+            text-decoration: underline;
+        }
+
+        .article-meta {
+            color: #777777;
+            font-size: 14px;
+        }
+
+        .article-search {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #cccccc;
+            border-radius: 7px;
+        }
+    </style>
 </head>
 
 <body>
 
-<header class="site-header">
-    <div class="container header-inner">
+    <main class="article-container">
 
-        <a class="logo" href="/">IPEN<span>.</span></a>
+        <h1>Artikel IPEN Academy</h1>
 
-        <nav class="navigation">
-            <a href="/">Beranda</a>
-            <a href="/List-Kelas/">List Kelas</a>
-            <a href="/Artikel/">Artikel</a>
-            <a href="/Berkas/">Berkas</a>
-        </nav>
+        <p>
+            Kumpulan artikel, pemikiran, pengetahuan,
+            dan kajian dari IPEN Academy.
+        </p>
 
-    </div>
-</header>
+        <input
+            type="search"
+            id="search"
+            class="article-search"
+            placeholder="Cari artikel..."
+        >
 
-<main class="container">
-
-    <article class="article-reader">
-
-        <a class="button" href="/Artikel/">
-            ← Kembali ke Artikel
-        </a>
-
-        <div id="articleContent">
-            <p class="muted">Memuat artikel...</p>
+        <div id="article-list">
+            Memuat artikel...
         </div>
 
-    </article>
+    </main>
 
-</main>
+    <script>
+        const articleList = document.getElementById("article-list");
+        const searchInput = document.getElementById("search");
 
-<footer class="site-footer">
-    <div class="container footer-inner">
-        <a class="logo" href="/">IPEN<span>.</span></a>
-        <p>IPEN Academy — Articles</p>
-    </div>
-</footer>
+        let articles = [];
 
-<script>
-const content = document.getElementById("articleContent");
+        async function loadArticles() {
 
-const params = new URLSearchParams(window.location.search);
-const file = params.get("file");
+            try {
 
-function escapeHTML(value) {
-    return String(value).replace(/[&<>"']/g, function(char) {
-        return {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;"
-        }[char];
-    });
-}
+                const response = await fetch(
+                    "./articles.json?t=" + Date.now()
+                );
 
-function getMetadata(markdown) {
-    const match = markdown.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n?/);
-
-    const metadata = {};
-
-    if (!match) {
-        return { metadata, body: markdown };
-    }
-
-    match[1].split(/\r?\n/).forEach(line => {
-        const separator = line.indexOf(":");
-
-        if (separator === -1) return;
-
-        const key = line.slice(0, separator).trim().toLowerCase();
-
-        const value = line.slice(separator + 1)
-            .trim()
-            .replace(/^["']|["']$/g, "");
-
-        metadata[key] = value;
-    });
-
-    return {
-        metadata,
-        body: markdown.slice(match[0].length)
-    };
-}
-
-function showError(message) {
-    content.innerHTML = `
-        <div class="empty-state">
-            <h2>Artikel tidak dapat dibuka.</h2>
-            <p>${escapeHTML(message)}</p>
-        </div>
-    `;
-}
-
-if (!file ||
-    !file.startsWith("Artikel/artikel/") ||
-    !file.toLowerCase().endsWith(".md") ||
-    file.split("/").includes("..") ||
-    file.startsWith("/") ||
-    file.includes("\\")) {
-
-    showError("Alamat artikel tidak valid.");
-} else {
-    fetch("/" + file.split("/").map(encodeURIComponent).join("/"))
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("File artikel tidak ditemukan.");
-            }
-
-            return response.text();
-        })
-        .then(markdown => {
-            const result = getMetadata(markdown);
-            const metadata = result.metadata;
-            const title = metadata.title || "Artikel IPEN Academy";
-
-            document.title = title + " — IPEN Academy";
-
-            const safeHTML = DOMPurify.sanitize(
-                marked.parse(result.body)
-            );
-
-            content.innerHTML = `
-                <p class="eyebrow">
-                    ${escapeHTML(metadata.category || "Artikel")}
-                </p>
-
-                <h1>${escapeHTML(title)}</h1>
-
-                ${
-                    metadata.description
-                        ? `<p class="muted">${escapeHTML(metadata.description)}</p>`
-                        : ""
+                if (!response.ok) {
+                    throw new Error("Gagal mengambil articles.json");
                 }
 
-                <hr>
+                articles = await response.json();
 
-                <div class="article-body">
-                    ${safeHTML}
-                </div>
-            `;
-        })
-        .catch(error => {
-            showError(error.message || "Terjadi kesalahan.");
+                displayArticles(articles);
+
+            } catch (error) {
+
+                articleList.innerHTML =
+                    "<p>Artikel gagal dimuat. Silakan coba lagi nanti.</p>";
+
+                console.error(error);
+
+            }
+        }
+
+        function displayArticles(data) {
+
+            articleList.innerHTML = "";
+
+            if (data.length === 0) {
+
+                articleList.innerHTML =
+                    "<p>Belum ada artikel yang diterbitkan.</p>";
+
+                return;
+            }
+
+            data.forEach(article => {
+
+                const card = document.createElement("article");
+
+                card.className = "article-card";
+
+                const title = document.createElement("h2");
+                const link = document.createElement("a");
+
+                link.textContent = article.title;
+                link.href = article.url;
+
+                title.appendChild(link);
+
+                const meta = document.createElement("p");
+                meta.className = "article-meta";
+
+                meta.textContent =
+                    "Penulis: " + article.author +
+                    (article.date ? " | " + article.date : "");
+
+                const description = document.createElement("p");
+                description.textContent = article.description;
+
+                card.appendChild(title);
+                card.appendChild(meta);
+                card.appendChild(description);
+
+                articleList.appendChild(card);
+
+            });
+
+        }
+
+        searchInput.addEventListener("input", function () {
+
+            const keyword = this.value.toLowerCase();
+
+            const filtered = articles.filter(article => {
+
+                return (
+                    article.title.toLowerCase().includes(keyword) ||
+                    article.author.toLowerCase().includes(keyword) ||
+                    article.description.toLowerCase().includes(keyword)
+                );
+
+            });
+
+            displayArticles(filtered);
+
         });
-}
-</script>
+
+        loadArticles();
+    </script>
 
 </body>
 </html>
