@@ -1,4 +1,5 @@
----title: Hari Buruh Bukan Sekadar Libur: Sejarah Perjuangan Hak Pekerja
+---
+title: Hari Buruh Bukan Sekadar Libur: Sejarah Perjuangan Hak Pekerja
 author: IPEN Academy
 date: 2026-11-04
 description: Membahas sejarah perjuangan buruh dan perkembangan hak-hak pekerja.
