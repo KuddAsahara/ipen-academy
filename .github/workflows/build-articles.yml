@@ -4,12 +4,10 @@ on:
   push:
     branches:
       - main
-
     paths:
-      - 'Artikel/**/*.md'
-      - 'Artikel/*.md'
-      - 'scripts/build_articles.py'
-      - '.github/workflows/build-articles.yml'
+      - "Artikel/**"
+      - "scripts/build_articles.py"
+      - ".github/workflows/build-articles.yml"
 
   workflow_dispatch:
 
@@ -17,83 +15,33 @@ permissions:
   contents: write
 
 jobs:
-
   build-articles:
-
     runs-on: ubuntu-latest
 
     steps:
-
-      # =====================================
-      # CHECKOUT
-      # =====================================
-
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      # =====================================
-      # PYTHON
-      # =====================================
+          ref: main
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
-      # =====================================
-      # GENERATE ARTICLE INDEX
-      # =====================================
-
-      - name: Generate Article Index
+      - name: Generate article index
         run: python scripts/build_articles.py
 
-      # =====================================
-      # COMMIT JSON
-      # =====================================
-
-      - name: Update Article Index
+      - name: Commit updated articles.json
         run: |
-
           git config user.name "github-actions[bot]"
-
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add Artikel/articles.json
 
-          if ! git diff --cached --quiet; then
-
-            git commit -m "Update IPEN Academy article index"
-
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Automatically update article index"
             git push
-
-          else
-
-            echo "No article index changes."
-
-          fi
-
-      # =====================================
-      # VERCEL DEPLOYMENT
-      # =====================================
-
-      - name: Trigger Vercel Deployment
-        if: success()
-        env:
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-
-        run: |
-
-          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
-
-            curl --fail --silent --show-error \
-              -X POST "$VERCEL_DEPLOY_HOOK_URL"
-
-            echo "Vercel deployment triggered."
-
-          else
-
-            echo "Vercel Deploy Hook belum dikonfigurasi."
-
           fi
