@@ -1,7 +1,6 @@
 ---
 title: "Hari Buruh Bukan Sekadar Libur: Sejarah Perjuangan Hak Pekerja"
 category: "Sejarah dan Sosial"
-date: "2026-10-10"
 description: "Menelusuri sejarah perjuangan jam kerja yang manusiawi, perkembangan serikat pekerja, gerakan buruh Indonesia, perubahan politik, dan tantangan kerja di era digital."
 ---
 
