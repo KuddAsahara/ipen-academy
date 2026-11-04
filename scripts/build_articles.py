@@ -3,171 +3,149 @@ import re
 from pathlib import Path
 from urllib.parse import quote
 
-# =========================================
-# IPEN ACADEMY — ARTICLE INDEX GENERATOR
-# =========================================
-
+# Lokasi utama repositori
 ROOT = Path(__file__).resolve().parent.parent
 
+# Folder artikel
 ARTICLE_DIR = ROOT / "Artikel"
-OUTPUT = ARTICLE_DIR / "articles.json"
 
-articles = []
+# File indeks artikel
+OUTPUT_FILE = ARTICLE_DIR / "articles.json"
 
 
-def parse_frontmatter(content):
+def read_frontmatter(content):
     """
-    Membaca metadata Markdown.
-    Format metadata menggunakan YAML sederhana.
+    Membaca metadata sederhana dari Markdown.
+    Contoh:
+    ---
+    title: Judul Artikel
+    author: Nama Penulis
+    date: 2026-11-04
+    description: Deskripsi artikel
+    ---
     """
 
     metadata = {}
 
     if not content.startswith("---"):
-        return metadata, content
+        return metadata
 
-    match = re.match(
-        r"\A---\s*\n(.*?)\n---\s*(?:\n|$)",
-        content,
-        re.DOTALL
-    )
+    parts = content.split("---", 2)
 
-    if not match:
-        return metadata, content
+    if len(parts) < 3:
+        return metadata
 
-    frontmatter = match.group(1)
-
-    for line in frontmatter.splitlines():
-
+    for line in parts[1].strip().splitlines():
         if ":" not in line:
             continue
 
         key, value = line.split(":", 1)
 
-        key = key.strip().lower()
-        value = value.strip()
+        metadata[key.strip().lower()] = value.strip().strip('"').strip("'")
 
-        if len(value) >= 2:
-            if value[0] == value[-1] and value[0] in ("'", '"'):
-                value = value[1:-1]
-
-        metadata[key] = value
-
-    body = content[match.end():].strip()
-
-    return metadata, body
+    return metadata
 
 
-def create_description(content):
+def extract_description(content):
     """
-    Mengambil paragraf pertama sebagai deskripsi
-    jika metadata description tidak tersedia.
+    Mengambil paragraf pertama sebagai deskripsi.
     """
 
-    text = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
-    text = re.sub(r"!\[.*?\]\(.*?\)", "", text)
-    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
-    text = re.sub(r"[#>*_`]", "", text)
-
-    paragraphs = [
-        paragraph.strip().replace("\n", " ")
-        for paragraph in text.split("\n\n")
-        if paragraph.strip()
-    ]
-
-    if not paragraphs:
-        return ""
-
-    description = paragraphs[0]
-
-    if len(description) > 200:
-        description = description[:197] + "..."
-
-    return description
-
-
-# =========================================
-# READ ARTICLES
-# =========================================
-
-if not ARTICLE_DIR.exists():
-    raise FileNotFoundError(
-        f"Folder artikel tidak ditemukan: {ARTICLE_DIR}"
+    content = re.sub(
+        r"\A---.*?---",
+        "",
+        content,
+        flags=re.DOTALL
     )
 
+    for line in content.splitlines():
 
-for file in sorted(ARTICLE_DIR.rglob("*.md")):
+        line = line.strip()
 
-    # Jangan membaca file Markdown tersembunyi.
-    if any(part.startswith(".") for part in file.relative_to(ARTICLE_DIR).parts):
-        continue
+        if not line:
+            continue
 
-    content = file.read_text(encoding="utf-8")
+        if line.startswith("#"):
+            continue
 
-    metadata, body = parse_frontmatter(content)
+        return line[:250]
 
-    title = metadata.get(
-        "title",
-        file.stem.replace("-", " ").replace("_", " ").title()
+    return "Baca artikel selengkapnya di IPEN Academy."
+
+
+def build_articles():
+
+    articles = []
+
+    if not ARTICLE_DIR.exists():
+        print("Folder Artikel tidak ditemukan.")
+        return
+
+    for file in ARTICLE_DIR.rglob("*.md"):
+
+        # Jangan membaca Markdown di folder baca
+        if "baca" in file.relative_to(ARTICLE_DIR).parts:
+            continue
+
+        content = file.read_text(encoding="utf-8")
+
+        metadata = read_frontmatter(content)
+
+        relative_path = file.relative_to(ARTICLE_DIR).as_posix()
+
+        title = metadata.get(
+            "title",
+            file.stem.replace("-", " ").title()
+        )
+
+        author = metadata.get(
+            "author",
+            "IPEN Academy"
+        )
+
+        date = metadata.get(
+            "date",
+            ""
+        )
+
+        description = metadata.get(
+            "description",
+            extract_description(content)
+        )
+
+        article = {
+            "title": title,
+            "author": author,
+            "date": date,
+            "description": description,
+            "file": relative_path,
+            "url": "/Artikel/baca/?file=" + quote(relative_path, safe="/")
+        }
+
+        articles.append(article)
+
+    # Urutkan berdasarkan tanggal terbaru
+    articles.sort(
+        key=lambda item: item["date"],
+        reverse=True
     )
 
-    description = metadata.get(
-        "description",
-        create_description(body)
+    OUTPUT_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True
     )
 
-    category = metadata.get("category", "Artikel")
-
-    author = metadata.get("author", "IPEN Academy")
-
-    date = metadata.get("date", "")
-
-    relative_path = file.relative_to(ARTICLE_DIR).as_posix()
-
-    encoded_path = quote(relative_path, safe="/")
-
-    article_url = (
-        "/Artikel/baca.html?file=" + encoded_path
+    OUTPUT_FILE.write_text(
+        json.dumps(
+            articles,
+            ensure_ascii=False,
+            indent=4
+        ),
+        encoding="utf-8"
     )
 
-    articles.append({
-        "title": title,
-        "description": description,
-        "category": category,
-        "author": author,
-        "date": date,
-        "url": article_url
-    })
+    print(f"Berhasil membuat indeks {len(articles)} artikel.")
 
 
-# =========================================
-# SORT ARTICLES
-# =========================================
-
-articles.sort(
-    key=lambda article: article.get("date", ""),
-    reverse=True
-)
-
-
-# =========================================
-# GENERATE JSON
-# =========================================
-
-OUTPUT.write_text(
-    json.dumps(
-        articles,
-        ensure_ascii=False,
-        indent=4
-    ),
-    encoding="utf-8"
-)
-
-
-print("=================================")
-print("IPEN ACADEMY ARTICLE GENERATOR")
-print("=================================")
-print(f"Jumlah artikel: {len(articles)}")
-print(f"Output: {OUTPUT}")
-print("Status: Berhasil")
-print("=================================")
+if __name__ == "__main__":
+    build_articles()
