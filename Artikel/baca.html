@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="Artikel dan publikasi IPEN Academy.">
+
+    <title>Membaca Artikel — IPEN Academy</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+
+</head>
+
+<body>
+
+    <!-- HEADER -->
+
+    <header class="site-header">
+
+        <div class="container header-inner">
+
+            <a class="logo" href="/">
+                IPEN<span>.</span>
+            </a>
+
+            <nav class="navigation">
+
+                <a href="/">Beranda</a>
+
+                <a href="/List-Kelas/">List Kelas</a>
+
+                <a href="/Artikel/">Artikel</a>
+
+                <a href="/Berkas/">Berkas</a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- MAIN -->
+
+    <main>
+
+        <section class="section">
+
+            <div class="container">
+
+                <a href="/Artikel/">
+                    ← Kembali ke Artikel
+                </a>
+
+                <article class="article-reader">
+
+                    <div id="articleContent">
+
+                        <p class="muted">
+                            Memuat artikel...
+                        </p>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- FOOTER -->
+
+    <footer class="site-footer">
+
+        <div class="container footer-inner">
+
+            <a class="logo" href="/">
+                IPEN<span>.</span>
+            </a>
+
+            <p>
+                IPEN Academy — Articles
+            </p>
+
+        </div>
+
+    </footer>
+
+
+    <!-- ARTICLE SCRIPT -->
+
+    <script>
+
+    const container = document.getElementById("articleContent");
+
+
+    function parseMetadata(content) {
+
+        const metadata = {};
+
+        const match = content.match(
+            /^---\s*\r?\n([\s\S]*?)\r?\n---\s*(?:\r?\n|$)/
+        );
+
+        if (!match) {
+
+            return {
+                metadata,
+                content
+            };
+
+        }
+
+        match[1].split(/\r?\n/).forEach(line => {
+
+            const index = line.indexOf(":");
+
+            if (index === -1) return;
+
+            const key = line.slice(0, index)
+                .trim()
+                .toLowerCase();
+
+            let value = line.slice(index + 1).trim();
+
+            if (
+                value.length >= 2 &&
+                (
+                    (value.startsWith('"') && value.endsWith('"')) ||
+                    (value.startsWith("'") && value.endsWith("'"))
+                )
+            ) {
+
+                value = value.slice(1, -1);
+
+            }
+
+            metadata[key] = value;
+
+        });
+
+        return {
+            metadata,
+            content: content.slice(match[0].length).trim()
+        };
+
+    }
+
+
+    async function loadArticle() {
+
+        try {
+
+            const params = new URLSearchParams(
+                window.location.search
+            );
+
+            const filename = params.get("file");
+
+            if (
+                !filename ||
+                filename.startsWith("/") ||
+                filename.includes("\\") ||
+                filename.split("/").some(part =>
+                    !/^[a-zA-Z0-9_-]+\.md$/.test(part)
+                )
+            ) {
+
+                throw new Error("Nama artikel tidak valid.");
+
+            }
+
+
+            const response = await fetch(
+                "/Artikel/" +
+                filename.split("/").map(encodeURIComponent).join("/"),
+                {
+                    cache: "no-store"
+                }
+            );
+
+
+            if (!response.ok) {
+
+                throw new Error("Artikel tidak ditemukan.");
+
+            }
+
+
+            const rawContent = await response.text();
+
+            const parsed = parseMetadata(rawContent);
+
+            const metadata = parsed.metadata;
+
+            const content = parsed.content;
+
+
+            // TITLE
+
+            const title = metadata.title || filename;
+
+            document.title =
+                title + " — IPEN Academy";
+
+
+            // ARTICLE HEADER
+
+            const heading = document.createElement("h1");
+
+            heading.textContent = title;
+
+
+            // ARTICLE INFORMATION
+
+            const information = document.createElement("p");
+
+            information.className = "muted";
+
+            information.textContent = [
+
+                metadata.author || "IPEN Academy",
+
+                metadata.category || "Artikel",
+
+                metadata.date || ""
+
+            ].filter(Boolean).join(" · ");
+
+
+            // ARTICLE BODY
+
+            const body = document.createElement("div");
+
+            const rendered = marked.parse(content);
+
+            body.innerHTML = DOMPurify.sanitize(rendered);
+
+
+            // DISPLAY
+
+            container.replaceChildren(
+                heading,
+                information,
+                body
+            );
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            container.innerHTML = `
+
+                <div class="empty-state">
+
+                    <h3>Artikel tidak ditemukan.</h3>
+
+                    <p>
+                        Artikel mungkin belum tersedia
+                        atau alamatnya tidak valid.
+                    </p>
+
+                    <a href="/Artikel/">
+                        Kembali ke daftar artikel
+                    </a>
+
+                </div>
+
+            `;
+
+        }
+
+    }
+
+
+    loadArticle();
+
+    </script>
+
+</body>
+
+</html>
