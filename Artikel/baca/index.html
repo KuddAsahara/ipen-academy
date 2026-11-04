@@ -5,175 +5,128 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Artikel | IPEN Academy</title>
+    <title>Membaca Artikel | IPEN Academy</title>
 
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../../style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        .article-container {
-            max-width: 1000px;
+        .reader-container {
+            max-width: 850px;
             margin: 40px auto;
-            padding: 20px;
+            padding: 25px;
+            background: white;
         }
 
-        .article-card {
-            background: #ffffff;
-            border: 1px solid #dddddd;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 18px;
+        .article-content {
+            line-height: 1.8;
+            overflow-wrap: anywhere;
         }
 
-        .article-card h2 {
-            margin-top: 0;
+        .article-content img {
+            max-width: 100%;
+            height: auto;
         }
 
-        .article-card a {
-            color: #2457a7;
-            text-decoration: none;
+        .article-content pre {
+            overflow-x: auto;
+            padding: 15px;
+            background: #f2f2f2;
         }
 
-        .article-card a:hover {
-            text-decoration: underline;
+        .article-content blockquote {
+            border-left: 4px solid #777;
+            padding-left: 15px;
+            color: #666;
         }
 
-        .article-meta {
-            color: #777777;
-            font-size: 14px;
-        }
-
-        .article-search {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px;
+        .back-link {
+            display: inline-block;
             margin-bottom: 25px;
-            border: 1px solid #cccccc;
-            border-radius: 7px;
         }
     </style>
 </head>
 
 <body>
 
-    <main class="article-container">
+    <main class="reader-container">
 
-        <h1>Artikel IPEN Academy</h1>
+        <a class="back-link" href="/Artikel/">
+            ← Kembali ke daftar artikel
+        </a>
 
-        <p>
-            Kumpulan artikel, pemikiran, pengetahuan,
-            dan kajian dari IPEN Academy.
-        </p>
-
-        <input
-            type="search"
-            id="search"
-            class="article-search"
-            placeholder="Cari artikel..."
-        >
-
-        <div id="article-list">
+        <article id="article-content" class="article-content">
             Memuat artikel...
-        </div>
+        </article>
 
     </main>
 
     <script>
-        const articleList = document.getElementById("article-list");
-        const searchInput = document.getElementById("search");
 
-        let articles = [];
+        async function loadArticle() {
 
-        async function loadArticles() {
+            const content = document.getElementById("article-content");
 
             try {
 
-                const response = await fetch(
-                    "./articles.json?t=" + Date.now()
+                const params = new URLSearchParams(
+                    window.location.search
                 );
 
-                if (!response.ok) {
-                    throw new Error("Gagal mengambil articles.json");
+                const filename = params.get("file");
+
+                if (!filename) {
+                    throw new Error("Nama file artikel tidak ditemukan.");
                 }
 
-                articles = await response.json();
+                const parts = filename.split("/");
 
-                displayArticles(articles);
+                if (
+                    filename.startsWith("/") ||
+                    parts.some(part =>
+                        !/^[a-zA-Z0-9_-]+\.md$/.test(part)
+                    )
+                ) {
+                    throw new Error("Nama file artikel tidak valid.");
+                }
+
+                const fileURL =
+                    "/Artikel/" +
+                    parts.map(encodeURIComponent).join("/");
+
+                const response = await fetch(fileURL);
+
+                if (!response.ok) {
+                    throw new Error("File artikel tidak ditemukan.");
+                }
+
+                const markdown = await response.text();
+
+                const body = markdown.replace(
+                    /^---[\s\S]*?---\s*/,
+                    ""
+                );
+
+                content.innerHTML = marked.parse(body);
+
+                document.title =
+                    "Artikel | IPEN Academy";
 
             } catch (error) {
 
-                articleList.innerHTML =
-                    "<p>Artikel gagal dimuat. Silakan coba lagi nanti.</p>";
+                content.innerHTML =
+                    "<h2>Artikel tidak dapat dibuka</h2>" +
+                    "<p>" + error.message + "</p>";
 
                 console.error(error);
 
             }
-        }
-
-        function displayArticles(data) {
-
-            articleList.innerHTML = "";
-
-            if (data.length === 0) {
-
-                articleList.innerHTML =
-                    "<p>Belum ada artikel yang diterbitkan.</p>";
-
-                return;
-            }
-
-            data.forEach(article => {
-
-                const card = document.createElement("article");
-
-                card.className = "article-card";
-
-                const title = document.createElement("h2");
-                const link = document.createElement("a");
-
-                link.textContent = article.title;
-                link.href = article.url;
-
-                title.appendChild(link);
-
-                const meta = document.createElement("p");
-                meta.className = "article-meta";
-
-                meta.textContent =
-                    "Penulis: " + article.author +
-                    (article.date ? " | " + article.date : "");
-
-                const description = document.createElement("p");
-                description.textContent = article.description;
-
-                card.appendChild(title);
-                card.appendChild(meta);
-                card.appendChild(description);
-
-                articleList.appendChild(card);
-
-            });
 
         }
 
-        searchInput.addEventListener("input", function () {
+        loadArticle();
 
-            const keyword = this.value.toLowerCase();
-
-            const filtered = articles.filter(article => {
-
-                return (
-                    article.title.toLowerCase().includes(keyword) ||
-                    article.author.toLowerCase().includes(keyword) ||
-                    article.description.toLowerCase().includes(keyword)
-                );
-
-            });
-
-            displayArticles(filtered);
-
-        });
-
-        loadArticles();
     </script>
 
 </body>
