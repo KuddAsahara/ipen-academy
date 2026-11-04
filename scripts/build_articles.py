@@ -2,7 +2,7 @@ import json
 import re
 from pathlib import Path
 
-ROOT = Path(file).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent
 ARTICLE_DIR = ROOT / “Artikel”
 OUTPUT = ARTICLE_DIR / “articles.json”
 
