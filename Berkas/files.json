@@ -1,9 +1,30 @@
 [
   {
+    "title": "Pride And Prejudice",
+    "filename": "Pride-And-Prejudice.pdf",
+    "category": "Buku",
+    "extension": "PDF",
+    "url": "/Berkas/Buku/Pride-And-Prejudice.pdf"
+  },
+  {
     "title": "The Dictator’S Handbook",
     "filename": "The-Dictator’s-Handbook.pdf",
     "category": "Buku",
     "extension": "PDF",
     "url": "/Berkas/Buku/The-Dictator%E2%80%99s-Handbook.pdf"
+  },
+  {
+    "title": "The General Theory Of Employment, Interest, And Money",
+    "filename": "The-General-Theory-of -Employment, -Interest, -and -Money.pdf",
+    "category": "Buku",
+    "extension": "PDF",
+    "url": "/Berkas/Buku/The-General-Theory-of%20-Employment%2C%20-Interest%2C%20-and%20-Money.pdf"
+  },
+  {
+    "title": "Upah, Harga, Dan Laba",
+    "filename": "Upah,-Harga,-dan-Laba.pdf",
+    "category": "Buku",
+    "extension": "PDF",
+    "url": "/Berkas/Buku/Upah%2C-Harga%2C-dan-Laba.pdf"
   }
 ]
