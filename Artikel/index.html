@@ -5,176 +5,293 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Artikel | IPEN Academy</title>
+    <title>Artikel — IPEN Academy</title>
 
-    <link rel="stylesheet" href="../style.css">
-
-    <style>
-        .article-container {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-
-        .article-card {
-            background: #ffffff;
-            border: 1px solid #dddddd;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 18px;
-        }
-
-        .article-card h2 {
-            margin-top: 0;
-        }
-
-        .article-card a {
-            color: #2457a7;
-            text-decoration: none;
-        }
-
-        .article-card a:hover {
-            text-decoration: underline;
-        }
-
-        .article-meta {
-            color: #777777;
-            font-size: 14px;
-        }
-
-        .article-search {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px;
-            margin-bottom: 25px;
-            border: 1px solid #cccccc;
-            border-radius: 7px;
-        }
-    </style>
+    <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
 
-    <main class="article-container">
+<header class="site-header">
+    <div class="container header-inner">
 
-        <h1>Artikel IPEN Academy</h1>
+        <a class="logo" href="/">IPEN<span>.</span></a>
 
-        <p>
-            Kumpulan artikel, pemikiran, pengetahuan,
-            dan kajian dari IPEN Academy.
-        </p>
+        <nav class="navigation">
+            <a href="/">Beranda</a>
+            <a href="/List-Kelas/">List Kelas</a>
+            <a href="/Artikel/">Artikel</a>
+            <a href="/Berkas/">Berkas</a>
+        </nav>
 
-        <input
-            type="search"
-            id="search"
-            class="article-search"
-            placeholder="Cari artikel..."
-        >
+    </div>
+</header>
 
-        <div id="article-list">
-            Memuat artikel...
+<main>
+
+    <section class="hero">
+        <div class="container">
+
+            <p class="eyebrow">02 / Knowledge & Publication</p>
+
+            <h1>Artikel.</h1>
+
+            <p class="hero-description">
+                Kumpulan tulisan, pemikiran, kajian,
+                dan berbagai artikel pengetahuan
+                yang diterbitkan oleh IPEN Academy.
+            </p>
+
         </div>
+    </section>
 
-    </main>
+    <section class="section">
+        <div class="container">
 
-    <script>
-        const articleList = document.getElementById("article-list");
-        const searchInput = document.getElementById("search");
+            <input
+                id="articleSearch"
+                class="search-box"
+                type="search"
+                placeholder="Cari judul artikel..."
+                aria-label="Cari artikel"
+            >
 
-        let articles = [];
+            <div id="articleFilters" class="filters">
 
-        async function loadArticles() {
+                <button
+                    class="filter-button active"
+                    data-category="Semua">
+                    Semua
+                </button>
 
-            try {
+                <button
+                    class="filter-button"
+                    data-category="Artikel">
+                    Artikel
+                </button>
 
-                const response = await fetch(
-                    "./articles.json?t=" + Date.now()
-                );
+            </div>
 
-                if (!response.ok) {
-                    throw new Error("Gagal mengambil articles.json");
-                }
+            <div id="articleList" class="content-list">
+                <p class="muted">Memuat indeks artikel...</p>
+            </div>
 
-                articles = await response.json();
+        </div>
+    </section>
 
-                displayArticles(articles);
+</main>
 
-            } catch (error) {
+<footer class="site-footer">
+    <div class="container footer-inner">
 
-                articleList.innerHTML =
-                    "<p>Artikel gagal dimuat. Silakan coba lagi nanti.</p>";
+        <a class="logo" href="/">IPEN<span>.</span></a>
 
-                console.error(error);
+        <p>IPEN Academy — Knowledge & Publication</p>
 
+    </div>
+</footer>
+
+<script>
+
+const articleList = document.getElementById("articleList");
+const articleSearch = document.getElementById("articleSearch");
+const articleFilters = document.getElementById("articleFilters");
+
+let articles = [];
+let selectedCategory = "Semua";
+
+
+function escapeHTML(value) {
+
+    return String(value ?? "").replace(/[&<>"']/g, function(char) {
+
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char];
+
+    });
+
+}
+
+
+function renderArticles() {
+
+    const query = articleSearch.value.toLowerCase().trim();
+
+    const filtered = articles.filter(article => {
+
+        const title = String(article.title || "");
+        const author = String(article.author || "");
+        const description = String(article.description || "");
+
+        const matchesQuery =
+            title.toLowerCase().includes(query) ||
+            author.toLowerCase().includes(query) ||
+            description.toLowerCase().includes(query);
+
+        const matchesCategory =
+            selectedCategory === "Semua" ||
+            selectedCategory === "Artikel";
+
+        return matchesQuery && matchesCategory;
+
+    });
+
+
+    if (filtered.length === 0) {
+
+        articleList.innerHTML = `
+            <div class="empty-state">
+
+                <h3>Belum ada artikel yang cocok.</h3>
+
+                <p>
+                    Artikel yang diterbitkan akan muncul
+                    secara otomatis setelah indeks diperbarui.
+                </p>
+
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    articleList.innerHTML = filtered.map((article, index) => {
+
+        const title = escapeHTML(article.title);
+        const author = escapeHTML(article.author || "IPEN Academy");
+        const date = escapeHTML(article.date || "");
+
+        let articleURL = "/Artikel/";
+
+        try {
+
+            const parsedURL = new URL(
+                article.url,
+                window.location.origin
+            );
+
+            if (
+                parsedURL.origin === window.location.origin &&
+                parsedURL.pathname.startsWith("/Artikel/baca/")
+            ) {
+                articleURL = parsedURL.pathname + parsedURL.search;
             }
+
+        } catch (error) {
+
+            console.error("URL artikel tidak valid:", error);
+
         }
 
-        function displayArticles(data) {
 
-            articleList.innerHTML = "";
+        return `
 
-            if (data.length === 0) {
+            <a class="list-item"
+               href="${escapeHTML(articleURL)}">
 
-                articleList.innerHTML =
-                    "<p>Belum ada artikel yang diterbitkan.</p>";
+                <span class="list-number">
+                    ${String(index + 1).padStart(2, "0")}
+                </span>
 
-                return;
-            }
+                <div>
 
-            data.forEach(article => {
+                    <h3>${title}</h3>
 
-                const card = document.createElement("article");
+                    <p>
+                        Artikel
+                        · ${author}
+                        ${date ? " · " + date : ""}
+                    </p>
 
-                card.className = "article-card";
+                </div>
 
-                const title = document.createElement("h2");
-                const link = document.createElement("a");
+                <span class="list-action">BACA ↗</span>
 
-                link.textContent = article.title;
-                link.href = article.url;
+            </a>
 
-                title.appendChild(link);
+        `;
 
-                const meta = document.createElement("p");
-                meta.className = "article-meta";
+    }).join("");
 
-                meta.textContent =
-                    "Penulis: " + article.author +
-                    (article.date ? " | " + article.date : "");
+}
 
-                const description = document.createElement("p");
-                description.textContent = article.description;
 
-                card.appendChild(title);
-                card.appendChild(meta);
-                card.appendChild(description);
+// Pencarian artikel
+articleSearch.addEventListener("input", renderArticles);
 
-                articleList.appendChild(card);
 
-            });
+// Filter artikel
+articleFilters.addEventListener("click", event => {
+
+    const button = event.target.closest("button[data-category]");
+
+    if (!button) return;
+
+    selectedCategory = button.dataset.category;
+
+    articleFilters.querySelectorAll("button").forEach(item => {
+
+        item.classList.toggle("active", item === button);
+
+    });
+
+    renderArticles();
+
+});
+
+
+// Mengambil indeks artikel
+fetch("/Artikel/articles.json?t=" + Date.now())
+
+    .then(response => {
+
+        if (!response.ok) {
+
+            throw new Error("Indeks artikel tidak ditemukan.");
 
         }
 
-        searchInput.addEventListener("input", function () {
+        return response.json();
 
-            const keyword = this.value.toLowerCase();
+    })
 
-            const filtered = articles.filter(article => {
+    .then(data => {
 
-                return (
-                    article.title.toLowerCase().includes(keyword) ||
-                    article.author.toLowerCase().includes(keyword) ||
-                    article.description.toLowerCase().includes(keyword)
-                );
+        articles = Array.isArray(data) ? data : [];
 
-            });
+        renderArticles();
 
-            displayArticles(filtered);
+    })
 
-        });
+    .catch(error => {
 
-        loadArticles();
-    </script>
+        console.error(error);
+
+        articleList.innerHTML = `
+
+            <div class="empty-state">
+
+                <h3>Indeks artikel belum tersedia.</h3>
+
+                <p>
+                    Pastikan GitHub Actions berhasil
+                    membuat Artikel/articles.json.
+                </p>
+
+            </div>
+
+        `;
+
+    });
+
+</script>
 
 </body>
 </html>
