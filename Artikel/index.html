@@ -2,415 +2,179 @@
 <html lang="id">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <title>Artikel | IPEN Academy</title>
 
-    <title>Artikel — IPEN Academy</title>
+    <link rel="stylesheet" href="../style.css">
 
-    <meta name="description"
-          content="Kumpulan artikel dan publikasi IPEN Academy.">
+    <style>
+        .article-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
 
-    <link rel="stylesheet" href="/style.css">
+        .article-card {
+            background: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 18px;
+        }
 
+        .article-card h2 {
+            margin-top: 0;
+        }
+
+        .article-card a {
+            color: #2457a7;
+            text-decoration: none;
+        }
+
+        .article-card a:hover {
+            text-decoration: underline;
+        }
+
+        .article-meta {
+            color: #777777;
+            font-size: 14px;
+        }
+
+        .article-search {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #cccccc;
+            border-radius: 7px;
+        }
+    </style>
 </head>
 
 <body>
 
+    <main class="article-container">
 
-    <!-- HEADER -->
+        <h1>Artikel IPEN Academy</h1>
 
-    <header class="site-header">
+        <p>
+            Kumpulan artikel, pemikiran, pengetahuan,
+            dan kajian dari IPEN Academy.
+        </p>
 
-        <div class="container header-inner">
+        <input
+            type="search"
+            id="search"
+            class="article-search"
+            placeholder="Cari artikel..."
+        >
 
-            <a class="logo" href="/">
-                IPEN<span>.</span>
-            </a>
-
-            <nav class="navigation">
-
-                <a href="/">Beranda</a>
-
-                <a href="/List-Kelas/">List Kelas</a>
-
-                <a href="/Artikel/">Artikel</a>
-
-                <a href="/Berkas/">Berkas</a>
-
-            </nav>
-
+        <div id="article-list">
+            Memuat artikel...
         </div>
-
-    </header>
-
-
-    <!-- HERO -->
-
-    <main>
-
-        <section class="hero">
-
-            <div class="container">
-
-                <p class="eyebrow">
-                    02 / Written Knowledge
-                </p>
-
-                <h1>Artikel.</h1>
-
-                <p class="hero-description">
-
-                    Kumpulan tulisan, gagasan, penjelasan,
-                    dan analisis dari IPEN Academy.
-
-                </p>
-
-            </div>
-
-        </section>
-
-
-        <!-- ARTICLE LIST -->
-
-        <section class="section">
-
-            <div class="container">
-
-                <input
-
-                    id="articleSearch"
-
-                    class="search-box"
-
-                    type="search"
-
-                    placeholder="Cari judul artikel..."
-
-                    aria-label="Cari artikel"
-
-                >
-
-                <div
-
-                    id="articleList"
-
-                    class="content-list"
-
-                >
-
-                    <p class="muted">
-                        Memuat indeks artikel...
-                    </p>
-
-                </div>
-
-            </div>
-
-        </section>
 
     </main>
 
-
-    <!-- FOOTER -->
-
-    <footer class="site-footer">
-
-        <div class="container footer-inner">
-
-            <a class="logo" href="/">
-                IPEN<span>.</span>
-            </a>
-
-            <p>
-                IPEN Academy — Articles
-            </p>
-
-        </div>
-
-    </footer>
-
-
-    <!-- SCRIPT -->
-
     <script>
+        const articleList = document.getElementById("article-list");
+        const searchInput = document.getElementById("search");
 
-    const articleList =
-        document.getElementById("articleList");
+        let articles = [];
 
-    const articleSearch =
-        document.getElementById("articleSearch");
+        async function loadArticles() {
 
+            try {
 
-    let articles = [];
+                const response = await fetch(
+                    "./articles.json?t=" + Date.now()
+                );
 
+                if (!response.ok) {
+                    throw new Error("Gagal mengambil articles.json");
+                }
 
-    // =====================================
-    // EMPTY MESSAGE
-    // =====================================
+                articles = await response.json();
 
-    function showMessage(title, description) {
+                displayArticles(articles);
 
-        const box = document.createElement("div");
+            } catch (error) {
 
-        box.className = "empty-state";
+                articleList.innerHTML =
+                    "<p>Artikel gagal dimuat. Silakan coba lagi nanti.</p>";
 
-        const heading = document.createElement("h3");
+                console.error(error);
 
-        heading.textContent = title;
-
-        const paragraph = document.createElement("p");
-
-        paragraph.textContent = description;
-
-        box.append(heading, paragraph);
-
-        articleList.replaceChildren(box);
-
-    }
-
-
-    // =====================================
-    // RENDER ARTICLES
-    // =====================================
-
-    function renderArticles() {
-
-        const query =
-            articleSearch.value.toLowerCase().trim();
-
-
-        const filtered = articles.filter(article => {
-
-            const title =
-                String(article.title || "").toLowerCase();
-
-            const description =
-                String(article.description || "").toLowerCase();
-
-            const category =
-                String(article.category || "").toLowerCase();
-
-            const author =
-                String(article.author || "").toLowerCase();
-
-            return (
-
-                title.includes(query) ||
-
-                description.includes(query) ||
-
-                category.includes(query) ||
-
-                author.includes(query)
-
-            );
-
-        });
-
-
-        if (filtered.length === 0) {
-
-            showMessage(
-
-                "Belum ada artikel.",
-
-                "Artikel yang tersedia akan muncul di sini."
-
-            );
-
-            return;
-
+            }
         }
 
+        function displayArticles(data) {
 
-        const fragment = document.createDocumentFragment();
+            articleList.innerHTML = "";
 
+            if (data.length === 0) {
 
-        filtered.forEach((article, index) => {
-
-            const link = document.createElement("a");
-
-            link.className = "list-item";
-
-
-            // VALIDATE ARTICLE URL
-
-            const url = new URL(
-                article.url || "",
-                window.location.origin
-            );
-
-
-            if (
-                url.origin !== window.location.origin ||
-                !url.pathname.startsWith("/Artikel/baca.html")
-            ) {
+                articleList.innerHTML =
+                    "<p>Belum ada artikel yang diterbitkan.</p>";
 
                 return;
-
             }
 
+            data.forEach(article => {
 
-            link.href = url.pathname + url.search;
+                const card = document.createElement("article");
 
+                card.className = "article-card";
 
-            // NUMBER
+                const title = document.createElement("h2");
+                const link = document.createElement("a");
 
-            const number = document.createElement("span");
+                link.textContent = article.title;
+                link.href = article.url;
 
-            number.className = "list-number";
+                title.appendChild(link);
 
-            number.textContent =
-                String(index + 1).padStart(2, "0");
+                const meta = document.createElement("p");
+                meta.className = "article-meta";
 
+                meta.textContent =
+                    "Penulis: " + article.author +
+                    (article.date ? " | " + article.date : "");
 
-            // CONTENT
+                const description = document.createElement("p");
+                description.textContent = article.description;
 
-            const content = document.createElement("div");
+                card.appendChild(title);
+                card.appendChild(meta);
+                card.appendChild(description);
 
+                articleList.appendChild(card);
 
-            const heading = document.createElement("h3");
+            });
 
-            heading.textContent =
-                article.title || "Tanpa Judul";
+        }
 
+        searchInput.addEventListener("input", function () {
 
-            const description = document.createElement("p");
+            const keyword = this.value.toLowerCase();
 
-            const information = [
+            const filtered = articles.filter(article => {
 
-                article.category || "Artikel",
-
-                article.author || "",
-
-                article.date || ""
-
-            ].filter(Boolean);
-
-
-            description.textContent =
-
-                information.join(" · ") +
-
-                (
-                    article.description
-                        ? " — " + article.description
-                        : ""
+                return (
+                    article.title.toLowerCase().includes(keyword) ||
+                    article.author.toLowerCase().includes(keyword) ||
+                    article.description.toLowerCase().includes(keyword)
                 );
 
+            });
 
-            content.append(heading, description);
-
-
-            // ACTION
-
-            const action = document.createElement("span");
-
-            action.className = "list-action";
-
-            action.textContent = "BACA →";
-
-
-            link.append(number, content, action);
-
-            fragment.appendChild(link);
+            displayArticles(filtered);
 
         });
 
-
-        if (!fragment.childElementCount) {
-
-            showMessage(
-                "Artikel tidak dapat ditampilkan.",
-                "Periksa kembali alamat artikel pada indeks."
-            );
-
-            return;
-
-        }
-
-
-        articleList.replaceChildren(fragment);
-
-    }
-
-
-    // =====================================
-    // SEARCH
-    // =====================================
-
-    articleSearch.addEventListener(
-        "input",
-        renderArticles
-    );
-
-
-    // =====================================
-    // LOAD JSON
-    // =====================================
-
-    async function loadArticles() {
-
-        try {
-
-            const response = await fetch(
-                "/Artikel/articles.json",
-                {
-                    cache: "no-store"
-                }
-            );
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    "Indeks artikel tidak ditemukan."
-                );
-
-            }
-
-
-            const data = await response.json();
-
-
-            if (!Array.isArray(data)) {
-
-                throw new Error(
-                    "Format indeks artikel tidak valid."
-                );
-
-            }
-
-
-            articles = data;
-
-            renderArticles();
-
-
-        } catch (error) {
-
-            console.error(error);
-
-            showMessage(
-
-                "Indeks belum tersedia.",
-
-                "Pastikan GitHub Actions berhasil membuat indeks artikel."
-
-            );
-
-        }
-
-    }
-
-
-    loadArticles();
-
+        loadArticles();
     </script>
 
 </body>
-
 </html>
